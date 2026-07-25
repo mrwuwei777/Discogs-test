@@ -91,6 +91,9 @@ button,
   color: var(--accent-fg);
   cursor: pointer;
   font-weight: 600;
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
 }
 
 button:disabled {
@@ -98,7 +101,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button.secondary {
+.secondary {
   background: transparent;
   color: var(--fg);
   border: 1px solid var(--border);
@@ -204,10 +207,18 @@ button.secondary {
   margin-top: 2px;
 }
 
-.result-card button {
-  padding: 8px 12px;
-  font-size: 0.85rem;
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+.result-actions button,
+.result-actions .button {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .result-expand-hint {

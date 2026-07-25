@@ -77,15 +77,26 @@ export function ResultCard({
           )}
           <div className="result-expand-hint">{expanded ? "Hide details ▲" : "View details ▼"}</div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAdd();
-          }}
-          disabled={status === "adding" || status === "added"}
-        >
-          {status === "added" ? "Added ✓" : status === "adding" ? "Adding…" : "Add"}
-        </button>
+        <div className="result-actions">
+          <a
+            href={`https://www.discogs.com/release/${result.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="button secondary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Open in Discogs
+          </a>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+            disabled={status === "adding" || status === "added"}
+          >
+            {status === "added" ? "Added ✓" : status === "adding" ? "Adding…" : "Add"}
+          </button>
+        </div>
       </div>
 
       {expanded && (

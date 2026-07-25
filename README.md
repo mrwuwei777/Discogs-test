@@ -2,9 +2,6 @@
 
 Photograph a record → find it on Discogs → add it straight to your collection.
 
-<!-- deploy marker: 7453600-verify -->
-
-
 ## How it works
 
 1. Open the app on your phone and take (or upload) a photo of a record's cover, label, or barcode.
@@ -38,11 +35,20 @@ Everything runs as a small Next.js app: a mobile-friendly web page plus a couple
    npm run dev
    ```
 
-   Open http://localhost:3000. To use the camera from your phone, deploy it (e.g. to [Vercel](https://vercel.com)) or expose your dev server over your LAN/a tunnel — the file input's `capture="environment"` attribute opens your phone's native camera directly.
+   Open http://localhost:3000. To use the camera from your phone, deploy it (e.g. to [Netlify](https://netlify.com)) or expose your dev server over your LAN/a tunnel.
 
-## Deploying
+## Deploying (Netlify)
 
-Any Next.js host works (Vercel is the path of least resistance). Set `DISCOGS_TOKEN`, `DISCOGS_USERNAME`, and `GEMINI_API_KEY` as environment variables on the host — don't commit `.env.local`.
+1. Go to https://app.netlify.com → **Add new site → Import an existing project**.
+2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+3. Netlify auto-detects Next.js via `netlify.toml` (already in this repo) — no build settings to change.
+4. Before the first deploy (or right after, then redeploy), add the environment variables under **Site configuration → Environment variables**:
+   - `DISCOGS_TOKEN`
+   - `DISCOGS_USERNAME` (optional)
+   - `GEMINI_API_KEY`
+5. Deploy. Netlify auto-redeploys on every push to the connected branch from then on.
+
+Any other Next.js host works too — just set the same three environment variables and don't commit `.env.local`.
 
 ## Notes
 

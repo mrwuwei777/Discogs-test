@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
 
 export function ResultCard({
@@ -11,6 +12,7 @@ export function ResultCard({
   details,
   detailsLoading,
   detailsError,
+  ownedCount,
 }: {
   result: DiscogsSearchResult;
   onAdd: () => void;
@@ -20,9 +22,13 @@ export function ResultCard({
   details: DiscogsReleaseDetail | null;
   detailsLoading: boolean;
   detailsError: string | null;
+  ownedCount: number;
 }) {
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  const owned = ownedCount > 0;
+
   return (
-    <div className="result-card-wrapper">
+    <div className={`result-card-wrapper${owned ? " owned" : ""}`}>
       <div className="result-card" onClick={onToggleExpand} role="button" tabIndex={0}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -38,6 +44,11 @@ export function ResultCard({
               .filter(Boolean)
               .join(" · ")}
           </div>
+          {owned && (
+            <div className="owned-badge">
+              ✓ In your collection{ownedCount > 1 ? ` (${ownedCount})` : ""}
+            </div>
+          )}
           <div className="result-expand-hint">{expanded ? "Hide details ▲" : "View details ▼"}</div>
         </div>
         <button
@@ -55,13 +66,25 @@ export function ResultCard({
         <div className="result-detail">
           {detailsLoading && <p className="status">Loading details…</p>}
           {detailsError && <p className="error">{detailsError}</p>}
+          {owned && (
+            <p className="owned-banner">
+              You already have this release in your collection
+              {ownedCount > 1 ? ` — ${ownedCount} copies` : ""}.
+            </p>
+          )}
           {details && (
             <>
               {details.images && details.images.length > 0 && (
                 <div className="result-detail-gallery">
                   {details.images.map((image, i) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={i} src={image.uri} alt="" loading="lazy" />
+                    <img
+                      key={i}
+                      src={image.uri}
+                      alt=""
+                      loading="lazy"
+                      onClick={() => setLightboxUri(image.uri)}
+                    />
                   ))}
                 </div>
               )}
@@ -127,6 +150,16 @@ export function ResultCard({
               {details.notes && <p className="result-detail-notes">{details.notes}</p>}
             </>
           )}
+        </div>
+      )}
+
+      {lightboxUri && (
+        <div className="lightbox" onClick={() => setLightboxUri(null)}>
+          <button className="lightbox-close" onClick={() => setLightboxUri(null)} aria-label="Close">
+            ×
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightboxUri} alt="" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

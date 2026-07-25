@@ -40,9 +40,11 @@ export interface DiscogsSearchResult {
   barcode?: string[];
 }
 
+const SEARCH_RESULT_LIMIT = "10";
+
 export async function searchByBarcode(barcode: string): Promise<DiscogsSearchResult[]> {
   const data = await discogsFetch(
-    `/database/search?barcode=${encodeURIComponent(barcode)}&type=release`,
+    `/database/search?barcode=${encodeURIComponent(barcode)}&type=release&per_page=${SEARCH_RESULT_LIMIT}`,
   );
   return data.results ?? [];
 }
@@ -52,7 +54,7 @@ export async function searchByQuery(params: {
   artist?: string;
   release_title?: string;
 }): Promise<DiscogsSearchResult[]> {
-  const search = new URLSearchParams({ type: "release" });
+  const search = new URLSearchParams({ type: "release", per_page: SEARCH_RESULT_LIMIT });
   if (params.q) search.set("q", params.q);
   if (params.artist) search.set("artist", params.artist);
   if (params.release_title) search.set("release_title", params.release_title);
@@ -98,6 +100,16 @@ export interface DiscogsFolder {
 export async function getFolders(username: string): Promise<DiscogsFolder[]> {
   const data = await discogsFetch(`/users/${encodeURIComponent(username)}/collection/folders`);
   return data.folders ?? [];
+}
+
+export async function getCollectionInstanceCount(
+  username: string,
+  releaseId: number,
+): Promise<number> {
+  const data = await discogsFetch(
+    `/users/${encodeURIComponent(username)}/collection/releases/${releaseId}`,
+  );
+  return Array.isArray(data.releases) ? data.releases.length : 0;
 }
 
 export async function addReleaseToCollection(

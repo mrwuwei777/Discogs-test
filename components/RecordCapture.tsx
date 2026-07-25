@@ -93,8 +93,23 @@ export function RecordCapture() {
   const [releaseDetails, setReleaseDetails] = useState<Record<number, DiscogsReleaseDetail>>({});
   const [detailsLoading, setDetailsLoading] = useState<Record<number, boolean>>({});
   const [detailsError, setDetailsError] = useState<Record<number, string>>({});
+  const [ownedMap, setOwnedMap] = useState<Record<number, number>>({});
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  async function checkOwnership(resultsList: DiscogsSearchResult[]) {
+    if (resultsList.length === 0) return;
+    try {
+      const ids = resultsList.map((r) => r.id).join(",");
+      const res = await fetch(`/api/discogs/collection-status?releaseIds=${ids}`);
+      const data = await parseJsonResponse(res);
+      if (data.owned) {
+        setOwnedMap((prev) => ({ ...prev, ...data.owned }));
+      }
+    } catch {
+      // Non-critical — skip silently if the ownership check fails.
+    }
+  }
 
   async function toggleExpand(releaseId: number) {
     if (expandedId === releaseId) {
@@ -134,6 +149,7 @@ export function RecordCapture() {
     setReleaseDetails({});
     setDetailsLoading({});
     setDetailsError({});
+    setOwnedMap({});
 
     try {
       const rawDataUrl = await fileToDataUrl(file);
@@ -151,6 +167,7 @@ export function RecordCapture() {
         if (data.results.length > 0) {
           setResults(data.results);
           setStage("results");
+          checkOwnership(data.results);
           return;
         }
       }
@@ -181,6 +198,7 @@ export function RecordCapture() {
 
       setResults(searchData.results);
       setStage(searchData.results.length > 0 ? "results" : "no-match");
+      checkOwnership(searchData.results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStage("idle");
@@ -198,6 +216,7 @@ export function RecordCapture() {
       const data = await parseJsonResponse(res);
       if (data.error) throw new Error(data.error);
       setAddStatus((prev) => ({ ...prev, [releaseId]: "added" }));
+      setOwnedMap((prev) => ({ ...prev, [releaseId]: (prev[releaseId] ?? 0) + 1 }));
     } catch (err) {
       setAddStatus((prev) => ({ ...prev, [releaseId]: "error" }));
       setError(err instanceof Error ? err.message : "Could not add to collection");
@@ -215,6 +234,7 @@ export function RecordCapture() {
     setReleaseDetails({});
     setDetailsLoading({});
     setDetailsError({});
+    setOwnedMap({});
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
@@ -298,6 +318,7 @@ export function RecordCapture() {
           details={releaseDetails[result.id] ?? null}
           detailsLoading={detailsLoading[result.id] ?? false}
           detailsError={detailsError[result.id] ?? null}
+          ownedCount={ownedMap[result.id] ?? 0}
         />
       ))}
 

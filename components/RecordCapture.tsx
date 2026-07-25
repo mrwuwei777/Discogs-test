@@ -13,7 +13,8 @@ type Stage =
   | "results"
   | "no-match";
 
-const ALLOWED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_DIMENSION = 1600;
+const JPEG_QUALITY = 0.82;
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -22,6 +23,51 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// Phone camera photos can be several MB; shrink + re-encode as JPEG so the
+// base64 payload stays well under serverless request body size limits.
+function shrinkImage(dataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas not supported on this browser"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+    };
+    img.onerror = () => reject(new Error("Could not load the photo for resizing"));
+    img.src = dataUrl;
+  });
+}
+
+async function parseJsonResponse(res: Response): Promise<any> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      res.ok
+        ? "Server returned an unexpected response"
+        : `Request failed (${res.status}): ${text.slice(0, 200) || res.statusText}`,
+    );
+  }
 }
 
 async function scanBarcode(dataUrl: string): Promise<string | null> {
@@ -51,17 +97,18 @@ export function RecordCapture() {
     setResults([]);
     setAddStatus({});
 
-    const dataUrl = await fileToDataUrl(file);
-    setImageUrl(dataUrl);
-
     try {
+      const rawDataUrl = await fileToDataUrl(file);
+      const dataUrl = await shrinkImage(rawDataUrl);
+      setImageUrl(dataUrl);
+
       setStage("scanning-barcode");
       const barcode = await scanBarcode(dataUrl);
 
       if (barcode) {
         setStage("searching");
         const res = await fetch(`/api/discogs/search?barcode=${encodeURIComponent(barcode)}`);
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
         if (data.error) throw new Error(data.error);
         if (data.results.length > 0) {
           setResults(data.results);
@@ -71,14 +118,13 @@ export function RecordCapture() {
       }
 
       setStage("identifying");
-      const mediaType = ALLOWED_MEDIA_TYPES.has(file.type) ? file.type : "image/jpeg";
       const base64 = dataUrl.split(",")[1];
       const identifyRes = await fetch("/api/identify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType }),
+        body: JSON.stringify({ imageBase64: base64, mediaType: "image/jpeg" }),
       });
-      const identifiedRecord: IdentifiedRecord = await identifyRes.json();
+      const identifiedRecord: IdentifiedRecord = await parseJsonResponse(identifyRes);
       if ((identifiedRecord as unknown as { error?: string }).error) {
         throw new Error((identifiedRecord as unknown as { error: string }).error);
       }
@@ -92,7 +138,7 @@ export function RecordCapture() {
       setStage("searching");
       const q = [identifiedRecord.artist, identifiedRecord.title].filter(Boolean).join(" ");
       const searchRes = await fetch(`/api/discogs/search?q=${encodeURIComponent(q)}`);
-      const searchData = await searchRes.json();
+      const searchData = await parseJsonResponse(searchRes);
       if (searchData.error) throw new Error(searchData.error);
 
       setResults(searchData.results);
@@ -111,7 +157,7 @@ export function RecordCapture() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ releaseId }),
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.error) throw new Error(data.error);
       setAddStatus((prev) => ({ ...prev, [releaseId]: "added" }));
     } catch (err) {

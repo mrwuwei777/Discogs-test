@@ -40,11 +40,9 @@ export interface DiscogsSearchResult {
   barcode?: string[];
 }
 
-const SEARCH_RESULT_LIMIT = "10";
-
 export async function searchByBarcode(barcode: string): Promise<DiscogsSearchResult[]> {
   const data = await discogsFetch(
-    `/database/search?barcode=${encodeURIComponent(barcode)}&type=release&per_page=${SEARCH_RESULT_LIMIT}`,
+    `/database/search?barcode=${encodeURIComponent(barcode)}&type=release&format=Vinyl`,
   );
   return data.results ?? [];
 }
@@ -54,7 +52,7 @@ export async function searchByQuery(params: {
   artist?: string;
   release_title?: string;
 }): Promise<DiscogsSearchResult[]> {
-  const search = new URLSearchParams({ type: "release", per_page: SEARCH_RESULT_LIMIT });
+  const search = new URLSearchParams({ type: "release", format: "Vinyl" });
   if (params.q) search.set("q", params.q);
   if (params.artist) search.set("artist", params.artist);
   if (params.release_title) search.set("release_title", params.release_title);

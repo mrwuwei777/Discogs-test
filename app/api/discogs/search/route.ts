@@ -7,6 +7,8 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q");
   const artist = searchParams.get("artist");
   const releaseTitle = searchParams.get("release_title");
+  const label = searchParams.get("label");
+  const catno = searchParams.get("catno");
 
   try {
     const results = barcode
@@ -15,6 +17,8 @@ export async function GET(req: NextRequest) {
           q: q ?? undefined,
           artist: artist ?? undefined,
           release_title: releaseTitle ?? undefined,
+          label: label ?? undefined,
+          catno: catno ?? undefined,
         });
     return NextResponse.json({ results });
   } catch (err) {

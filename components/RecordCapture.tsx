@@ -70,6 +70,13 @@ async function parseJsonResponse(res: Response): Promise<any> {
   }
 }
 
+async function fetchSearchResults(params: URLSearchParams): Promise<DiscogsSearchResult[]> {
+  const res = await fetch(`/api/discogs/search?${params.toString()}`);
+  const data = await parseJsonResponse(res);
+  if (data.error) throw new Error(data.error);
+  return data.results;
+}
+
 async function scanBarcode(dataUrl: string): Promise<string | null> {
   try {
     const { BrowserMultiFormatReader } = await import("@zxing/browser");
@@ -177,14 +184,12 @@ export function RecordCapture() {
 
       if (barcode) {
         setStage("searching");
-        const res = await fetch(`/api/discogs/search?barcode=${encodeURIComponent(barcode)}`);
-        const data = await parseJsonResponse(res);
-        if (data.error) throw new Error(data.error);
-        if (data.results.length > 0) {
-          setResults(data.results);
+        const barcodeResults = await fetchSearchResults(new URLSearchParams({ barcode }));
+        if (barcodeResults.length > 0) {
+          setResults(barcodeResults);
           setStage("results");
-          checkOwnership(data.results);
-          checkPrices(data.results);
+          checkOwnership(barcodeResults);
+          checkPrices(barcodeResults);
           return;
         }
       }
@@ -202,21 +207,34 @@ export function RecordCapture() {
       }
       setIdentified(identifiedRecord);
 
-      if (!identifiedRecord.artist && !identifiedRecord.title) {
+      if (!identifiedRecord.artist && !identifiedRecord.title && !identifiedRecord.catalogNumber) {
         setStage("no-match");
         return;
       }
 
       setStage("searching");
-      const q = [identifiedRecord.artist, identifiedRecord.title].filter(Boolean).join(" ");
-      const searchRes = await fetch(`/api/discogs/search?q=${encodeURIComponent(q)}`);
-      const searchData = await parseJsonResponse(searchRes);
-      if (searchData.error) throw new Error(searchData.error);
+      let searchResults: DiscogsSearchResult[] = [];
 
-      setResults(searchData.results);
-      setStage(searchData.results.length > 0 ? "results" : "no-match");
-      checkOwnership(searchData.results);
-      checkPrices(searchData.results);
+      // Prioritize the catalogue number — it's the most precise identifier
+      // for a specific pressing — before falling back to artist/title.
+      if (identifiedRecord.catalogNumber) {
+        const params = new URLSearchParams({ catno: identifiedRecord.catalogNumber });
+        if (identifiedRecord.label) params.set("label", identifiedRecord.label);
+        searchResults = await fetchSearchResults(params);
+      }
+
+      if (searchResults.length === 0 && (identifiedRecord.artist || identifiedRecord.title)) {
+        const params = new URLSearchParams();
+        if (identifiedRecord.artist) params.set("artist", identifiedRecord.artist);
+        if (identifiedRecord.title) params.set("release_title", identifiedRecord.title);
+        if (identifiedRecord.label) params.set("label", identifiedRecord.label);
+        searchResults = await fetchSearchResults(params);
+      }
+
+      setResults(searchResults);
+      setStage(searchResults.length > 0 ? "results" : "no-match");
+      checkOwnership(searchResults);
+      checkPrices(searchResults);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStage("idle");

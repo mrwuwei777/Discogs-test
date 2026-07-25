@@ -51,11 +51,15 @@ export async function searchByQuery(params: {
   q?: string;
   artist?: string;
   release_title?: string;
+  label?: string;
+  catno?: string;
 }): Promise<DiscogsSearchResult[]> {
   const search = new URLSearchParams({ type: "release", format: "Vinyl" });
   if (params.q) search.set("q", params.q);
   if (params.artist) search.set("artist", params.artist);
   if (params.release_title) search.set("release_title", params.release_title);
+  if (params.label) search.set("label", params.label);
+  if (params.catno) search.set("catno", params.catno);
   const data = await discogsFetch(`/database/search?${search.toString()}`);
   return data.results ?? [];
 }

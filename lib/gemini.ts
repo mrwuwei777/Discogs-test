@@ -16,6 +16,24 @@ const SYSTEM_PROMPT = `You identify vinyl/CD records from a photo of their sleev
 Read any visible text (artist, album/release title, label name, catalogue number, barcode, year/pressing info).
 If you cannot read something, use null for that field. "confidence" reflects how sure you are of the artist+title.`;
 
+// Discogs search fields don't handle stray punctuation/symbols well (quotes,
+// asterisks, em-dashes, etc. that vision OCR sometimes emits), so strip
+// anything that isn't a letter, number, or space before it's used to query.
+function sanitizeText(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const cleaned = value
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
+function sanitizeBarcode(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const cleaned = value.replace(/[^0-9A-Za-z]/g, "");
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -66,9 +84,21 @@ export async function identifyRecordFromImage(
     throw new Error("No text response from Gemini");
   }
 
+  let parsed: IdentifiedRecord;
   try {
-    return JSON.parse(text);
+    parsed = JSON.parse(text);
   } catch {
     throw new Error(`Could not parse Gemini response as JSON: ${text}`);
   }
+
+  return {
+    ...parsed,
+    artist: sanitizeText(parsed.artist),
+    title: sanitizeText(parsed.title),
+    format: sanitizeText(parsed.format),
+    year: sanitizeText(parsed.year),
+    label: sanitizeText(parsed.label),
+    catalogNumber: sanitizeText(parsed.catalogNumber),
+    barcode: sanitizeBarcode(parsed.barcode),
+  };
 }

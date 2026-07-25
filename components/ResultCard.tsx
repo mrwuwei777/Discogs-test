@@ -11,6 +11,16 @@ function formatPrice(currency: string, value: number): string {
   }
 }
 
+function getYoutubeId(uri: string): string | null {
+  try {
+    const url = new URL(uri);
+    if (url.hostname.includes("youtu.be")) return url.pathname.slice(1) || null;
+    return url.searchParams.get("v");
+  } catch {
+    return null;
+  }
+}
+
 export function ResultCard({
   result,
   onAdd,
@@ -170,6 +180,28 @@ export function ResultCard({
                 </ol>
               )}
               {details.notes && <p className="result-detail-notes">{details.notes}</p>}
+              {details.videos && details.videos.length > 0 && (
+                <div className="video-list">
+                  {details.videos.map((video, i) => {
+                    const youtubeId = getYoutubeId(video.uri);
+                    if (!youtubeId) return null;
+                    return (
+                      <div key={i} className="video-item">
+                        <div className="video-embed">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${youtubeId}`}
+                            title={video.title}
+                            loading="lazy"
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                        <div className="video-title">{video.title}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
         </div>

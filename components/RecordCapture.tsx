@@ -262,6 +262,12 @@ export function RecordCapture() {
 
   return (
     <div>
+      <div className="restart-bar">
+        <button className="secondary" onClick={reset}>
+          ↺ Restart
+        </button>
+      </div>
+
       {!imageUrl && (
         <div className="capture-box">
           <p>Take a photo of the record cover, label, or barcode.</p>

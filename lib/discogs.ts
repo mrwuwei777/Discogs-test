@@ -83,6 +83,7 @@ export interface DiscogsReleaseDetail {
   tracklist?: { position: string; title: string; duration: string }[];
   identifiers?: { type: string; value: string; description?: string }[];
   community?: { have: number; want: number; rating?: { average: number; count: number } };
+  videos?: { uri: string; title: string; duration?: number }[];
 }
 
 export async function getRelease(releaseId: number): Promise<DiscogsReleaseDetail> {

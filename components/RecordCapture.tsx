@@ -89,7 +89,8 @@ export function RecordCapture() {
   const [results, setResults] = useState<DiscogsSearchResult[]>([]);
   const [addStatus, setAddStatus] = useState<Record<number, "idle" | "adding" | "added" | "error">>({});
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setError(null);
@@ -173,7 +174,8 @@ export function RecordCapture() {
     setResults([]);
     setAddStatus({});
     setError(null);
-    if (inputRef.current) inputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
 
   const busy = stage === "scanning-barcode" || stage === "identifying" || stage === "searching";
@@ -184,7 +186,18 @@ export function RecordCapture() {
         <div className="capture-box">
           <p>Take a photo of the record cover, label, or barcode.</p>
           <input
-            ref={inputRef}
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
+          <input
+            ref={galleryInputRef}
             type="file"
             accept="image/*"
             style={{ display: "none" }}
@@ -193,7 +206,18 @@ export function RecordCapture() {
               if (file) handleFile(file);
             }}
           />
-          <button onClick={() => inputRef.current?.click()}>Take / choose photo</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={{ flex: 1 }} onClick={() => cameraInputRef.current?.click()}>
+              Use camera
+            </button>
+            <button
+              className="secondary"
+              style={{ flex: 1 }}
+              onClick={() => galleryInputRef.current?.click()}
+            >
+              Choose photo
+            </button>
+          </div>
         </div>
       )}
 

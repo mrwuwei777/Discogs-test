@@ -64,6 +64,26 @@ export async function getIdentity(): Promise<{ username: string; id: number }> {
   return discogsFetch("/oauth/identity");
 }
 
+export interface DiscogsReleaseDetail {
+  id: number;
+  title: string;
+  artists_sort?: string;
+  year?: number;
+  country?: string;
+  released?: string;
+  genres?: string[];
+  styles?: string[];
+  notes?: string;
+  images?: { uri: string; type: string }[];
+  labels?: { name: string; catno: string }[];
+  formats?: { name: string; qty: string; descriptions?: string[] }[];
+  tracklist?: { position: string; title: string; duration: string }[];
+}
+
+export async function getRelease(releaseId: number): Promise<DiscogsReleaseDetail> {
+  return discogsFetch(`/releases/${releaseId}`);
+}
+
 export interface DiscogsFolder {
   id: number;
   name: string;

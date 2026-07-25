@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { DiscogsSearchResult } from "@/lib/discogs";
+import type { DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
 import type { IdentifiedRecord } from "@/lib/gemini";
 import { ResultCard } from "./ResultCard";
 
@@ -89,14 +89,51 @@ export function RecordCapture() {
   const [results, setResults] = useState<DiscogsSearchResult[]>([]);
   const [addStatus, setAddStatus] = useState<Record<number, "idle" | "adding" | "added" | "error">>({});
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [releaseDetails, setReleaseDetails] = useState<Record<number, DiscogsReleaseDetail>>({});
+  const [detailsLoading, setDetailsLoading] = useState<Record<number, boolean>>({});
+  const [detailsError, setDetailsError] = useState<Record<number, string>>({});
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  async function toggleExpand(releaseId: number) {
+    if (expandedId === releaseId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(releaseId);
+    if (releaseDetails[releaseId] || detailsLoading[releaseId]) return;
+
+    setDetailsLoading((prev) => ({ ...prev, [releaseId]: true }));
+    setDetailsError((prev) => {
+      const next = { ...prev };
+      delete next[releaseId];
+      return next;
+    });
+    try {
+      const res = await fetch(`/api/discogs/release/${releaseId}`);
+      const data = await parseJsonResponse(res);
+      if (data.error) throw new Error(data.error);
+      setReleaseDetails((prev) => ({ ...prev, [releaseId]: data }));
+    } catch (err) {
+      setDetailsError((prev) => ({
+        ...prev,
+        [releaseId]: err instanceof Error ? err.message : "Could not load details",
+      }));
+    } finally {
+      setDetailsLoading((prev) => ({ ...prev, [releaseId]: false }));
+    }
+  }
 
   async function handleFile(file: File) {
     setError(null);
     setIdentified(null);
     setResults([]);
     setAddStatus({});
+    setExpandedId(null);
+    setReleaseDetails({});
+    setDetailsLoading({});
+    setDetailsError({});
 
     try {
       const rawDataUrl = await fileToDataUrl(file);
@@ -174,6 +211,10 @@ export function RecordCapture() {
     setResults([]);
     setAddStatus({});
     setError(null);
+    setExpandedId(null);
+    setReleaseDetails({});
+    setDetailsLoading({});
+    setDetailsError({});
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
@@ -252,6 +293,11 @@ export function RecordCapture() {
           result={result}
           status={addStatus[result.id] ?? "idle"}
           onAdd={() => handleAdd(result.id)}
+          expanded={expandedId === result.id}
+          onToggleExpand={() => toggleExpand(result.id)}
+          details={releaseDetails[result.id] ?? null}
+          detailsLoading={detailsLoading[result.id] ?? false}
+          detailsError={detailsError[result.id] ?? null}
         />
       ))}
 

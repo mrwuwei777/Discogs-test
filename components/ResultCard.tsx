@@ -57,11 +57,18 @@ export function ResultCard({
           {detailsError && <p className="error">{detailsError}</p>}
           {details && (
             <>
-              {details.images && details.images[0] && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="result-detail-image" src={details.images[0].uri} alt="" />
+              {details.images && details.images.length > 0 && (
+                <div className="result-detail-gallery">
+                  {details.images.map((image, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={image.uri} alt="" loading="lazy" />
+                  ))}
+                </div>
               )}
               <div className="result-detail-meta">
+                {details.artists && details.artists.length > 0 && (
+                  <div>Artist: {details.artists.map((a) => a.name).join(", ")}</div>
+                )}
                 {details.country && <div>Country: {details.country}</div>}
                 {details.released && <div>Released: {details.released}</div>}
                 {details.genres && details.genres.length > 0 && (
@@ -72,8 +79,12 @@ export function ResultCard({
                 )}
                 {details.labels && details.labels.length > 0 && (
                   <div>
-                    Label:{" "}
-                    {details.labels.map((l) => `${l.name} (${l.catno})`).join(", ")}
+                    Label: {details.labels.map((l) => l.name).join(", ")}
+                  </div>
+                )}
+                {details.labels && details.labels.length > 0 && (
+                  <div>
+                    Catalog #: {details.labels.map((l) => l.catno).filter(Boolean).join(", ")}
                   </div>
                 )}
                 {details.formats && details.formats.length > 0 && (
@@ -84,6 +95,23 @@ export function ResultCard({
                       .join(", ")}
                   </div>
                 )}
+                {details.identifiers && details.identifiers.length > 0 && (
+                  <div>
+                    {details.identifiers
+                      .map((id) => `${id.description || id.type}: ${id.value}`)
+                      .join(" · ")}
+                  </div>
+                )}
+                {details.community && (
+                  <div>
+                    Collection stats: {details.community.have} have, {details.community.want} want
+                    {details.community.rating && details.community.rating.count > 0
+                      ? ` · rated ${details.community.rating.average.toFixed(2)}/5 (${details.community.rating.count})`
+                      : ""}
+                  </div>
+                )}
+                {details.data_quality && <div>Data quality: {details.data_quality}</div>}
+                {details.master_id && <div>Master release ID: {details.master_id}</div>}
               </div>
               {details.tracklist && details.tracklist.length > 0 && (
                 <ol className="tracklist">

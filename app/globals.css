@@ -177,12 +177,21 @@ button.secondary {
   font-size: 0.85rem;
 }
 
-.result-detail-image {
-  width: 100%;
-  max-height: 260px;
+.result-detail-gallery {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.result-detail-gallery img {
+  flex-shrink: 0;
+  height: 200px;
+  width: auto;
+  max-width: 80vw;
   object-fit: contain;
   border-radius: 8px;
-  margin-bottom: 10px;
   background: var(--bg);
 }
 

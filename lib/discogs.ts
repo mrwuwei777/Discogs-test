@@ -67,6 +67,7 @@ export async function getIdentity(): Promise<{ username: string; id: number }> {
 export interface DiscogsReleaseDetail {
   id: number;
   title: string;
+  artists?: { name: string }[];
   artists_sort?: string;
   year?: number;
   country?: string;
@@ -74,10 +75,14 @@ export interface DiscogsReleaseDetail {
   genres?: string[];
   styles?: string[];
   notes?: string;
+  data_quality?: string;
+  master_id?: number;
   images?: { uri: string; type: string }[];
   labels?: { name: string; catno: string }[];
   formats?: { name: string; qty: string; descriptions?: string[] }[];
   tracklist?: { position: string; title: string; duration: string }[];
+  identifiers?: { type: string; value: string; description?: string }[];
+  community?: { have: number; want: number; rating?: { average: number; count: number } };
 }
 
 export async function getRelease(releaseId: number): Promise<DiscogsReleaseDetail> {

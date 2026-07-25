@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
+import type { DiscogsPriceStats, DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
+
+function formatPrice(currency: string, value: number): string {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(2)}`;
+  }
+}
 
 export function ResultCard({
   result,
@@ -13,6 +21,7 @@ export function ResultCard({
   detailsLoading,
   detailsError,
   ownedCount,
+  price,
 }: {
   result: DiscogsSearchResult;
   onAdd: () => void;
@@ -23,6 +32,7 @@ export function ResultCard({
   detailsLoading: boolean;
   detailsError: string | null;
   ownedCount: number;
+  price: DiscogsPriceStats | null;
 }) {
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const owned = ownedCount > 0;
@@ -44,6 +54,12 @@ export function ResultCard({
               .filter(Boolean)
               .join(" · ")}
           </div>
+          {price && (
+            <div className="result-meta">
+              Median {formatPrice(price.currency, price.median)} · Max{" "}
+              {formatPrice(price.currency, price.high)}
+            </div>
+          )}
           {owned && (
             <div className="owned-badge">
               ✓ In your collection{ownedCount > 1 ? ` (${ownedCount})` : ""}
@@ -89,6 +105,12 @@ export function ResultCard({
                 </div>
               )}
               <div className="result-detail-meta">
+                {price && (
+                  <div>
+                    Estimated value: Median {formatPrice(price.currency, price.median)} · Max{" "}
+                    {formatPrice(price.currency, price.high)}
+                  </div>
+                )}
                 {details.artists && details.artists.length > 0 && (
                   <div>Artist: {details.artists.map((a) => a.name).join(", ")}</div>
                 )}

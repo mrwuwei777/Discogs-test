@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
+import type { DiscogsPriceStats, DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/discogs";
 import type { IdentifiedRecord } from "@/lib/gemini";
 import { ResultCard } from "./ResultCard";
 
@@ -94,6 +94,7 @@ export function RecordCapture() {
   const [detailsLoading, setDetailsLoading] = useState<Record<number, boolean>>({});
   const [detailsError, setDetailsError] = useState<Record<number, string>>({});
   const [ownedMap, setOwnedMap] = useState<Record<number, number>>({});
+  const [priceMap, setPriceMap] = useState<Record<number, DiscogsPriceStats | null>>({});
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +109,20 @@ export function RecordCapture() {
       }
     } catch {
       // Non-critical — skip silently if the ownership check fails.
+    }
+  }
+
+  async function checkPrices(resultsList: DiscogsSearchResult[]) {
+    if (resultsList.length === 0) return;
+    try {
+      const ids = resultsList.map((r) => r.id).join(",");
+      const res = await fetch(`/api/discogs/price-status?releaseIds=${ids}`);
+      const data = await parseJsonResponse(res);
+      if (data.prices) {
+        setPriceMap((prev) => ({ ...prev, ...data.prices }));
+      }
+    } catch {
+      // Non-critical — skip silently if the price check fails.
     }
   }
 
@@ -150,6 +165,7 @@ export function RecordCapture() {
     setDetailsLoading({});
     setDetailsError({});
     setOwnedMap({});
+    setPriceMap({});
 
     try {
       const rawDataUrl = await fileToDataUrl(file);
@@ -168,6 +184,7 @@ export function RecordCapture() {
           setResults(data.results);
           setStage("results");
           checkOwnership(data.results);
+          checkPrices(data.results);
           return;
         }
       }
@@ -199,6 +216,7 @@ export function RecordCapture() {
       setResults(searchData.results);
       setStage(searchData.results.length > 0 ? "results" : "no-match");
       checkOwnership(searchData.results);
+      checkPrices(searchData.results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStage("idle");
@@ -235,6 +253,7 @@ export function RecordCapture() {
     setDetailsLoading({});
     setDetailsError({});
     setOwnedMap({});
+    setPriceMap({});
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
@@ -319,6 +338,7 @@ export function RecordCapture() {
           detailsLoading={detailsLoading[result.id] ?? false}
           detailsError={detailsError[result.id] ?? null}
           ownedCount={ownedMap[result.id] ?? 0}
+          price={priceMap[result.id] ?? null}
         />
       ))}
 

@@ -110,6 +110,32 @@ export async function getCollectionInstanceCount(
   return Array.isArray(data.releases) ? data.releases.length : 0;
 }
 
+export interface DiscogsPriceStats {
+  currency: string;
+  median: number;
+  high: number;
+}
+
+// Discogs doesn't expose sold-item median/high stats directly. Its
+// price_suggestions endpoint gives a suggested value per condition grade
+// (Poor through Mint) in the account's currency, which we derive a
+// median and a maximum from.
+export async function getPriceStats(releaseId: number): Promise<DiscogsPriceStats | null> {
+  const data = await discogsFetch(`/marketplace/price_suggestions/${releaseId}`);
+  const entries = Object.values(data ?? {}) as { currency: string; value: number }[];
+  if (entries.length === 0) return null;
+
+  const values = entries.map((e) => e.value).sort((a, b) => a - b);
+  const mid = Math.floor(values.length / 2);
+  const median = values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
+
+  return {
+    currency: entries[0].currency,
+    median,
+    high: values[values.length - 1],
+  };
+}
+
 export async function addReleaseToCollection(
   username: string,
   releaseId: number,

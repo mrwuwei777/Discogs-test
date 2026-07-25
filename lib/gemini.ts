@@ -40,7 +40,7 @@ export async function identifyRecordFromImage(
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set. Add it to your .env.local file.");
   }
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-flash-latest";
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({

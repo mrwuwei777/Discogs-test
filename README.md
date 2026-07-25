@@ -6,10 +6,10 @@ Photograph a record → find it on Discogs → add it straight to your collectio
 
 1. Open the app on your phone and take (or upload) a photo of a record's cover, label, or barcode.
 2. The app first tries to read a **barcode** from the photo in your browser (via ZXing) and looks it up directly on Discogs.
-3. If no barcode is found, the photo is sent to **Claude** to read the artist/title off the cover, which is then used to search Discogs.
+3. If no barcode is found, the photo is sent to **Google Gemini** (free tier) to read the artist/title off the cover, which is then used to search Discogs.
 4. You pick the correct release from the search results and tap **Add** — it's added to your Discogs collection via the Discogs API.
 
-Everything runs as a small Next.js app: a mobile-friendly web page plus a couple of API routes that talk to Discogs and Anthropic. Your Discogs token and Anthropic API key stay server-side and are never sent to the browser.
+Everything runs as a small Next.js app: a mobile-friendly web page plus a couple of API routes that talk to Discogs and Gemini. Your Discogs token and Gemini API key stay server-side and are never sent to the browser.
 
 ## Setup
 
@@ -27,7 +27,7 @@ Everything runs as a small Next.js app: a mobile-friendly web page plus a couple
 
    - `DISCOGS_TOKEN` — generate a personal access token at https://www.discogs.com/settings/developers
    - `DISCOGS_USERNAME` — optional; auto-detected from the token if left blank
-   - `ANTHROPIC_API_KEY` — from https://console.anthropic.com/settings/keys
+   - `GEMINI_API_KEY` — free, from https://aistudio.google.com/apikey (no card required at the free-tier request volumes this app uses)
 
 3. Run it locally:
 
@@ -39,7 +39,7 @@ Everything runs as a small Next.js app: a mobile-friendly web page plus a couple
 
 ## Deploying
 
-Any Next.js host works (Vercel is the path of least resistance). Set `DISCOGS_TOKEN`, `DISCOGS_USERNAME`, and `ANTHROPIC_API_KEY` as environment variables on the host — don't commit `.env.local`.
+Any Next.js host works (Vercel is the path of least resistance). Set `DISCOGS_TOKEN`, `DISCOGS_USERNAME`, and `GEMINI_API_KEY` as environment variables on the host — don't commit `.env.local`.
 
 ## Notes
 

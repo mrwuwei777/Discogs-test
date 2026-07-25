@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.115.0",
+    "@google/genai": "^2.13.0",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
     "next": "16.2.11",

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { DiscogsSearchResult } from "@/lib/discogs";
-import type { IdentifiedRecord } from "@/lib/anthropic";
+import type { IdentifiedRecord } from "@/lib/gemini";
 import { ResultCard } from "./ResultCard";
 
 type Stage =
@@ -158,7 +158,7 @@ export function RecordCapture() {
       )}
 
       {stage === "scanning-barcode" && <p className="status">Scanning for a barcode…</p>}
-      {stage === "identifying" && <p className="status">Reading the cover with Claude…</p>}
+      {stage === "identifying" && <p className="status">Reading the cover with Gemini…</p>}
       {stage === "searching" && <p className="status">Searching Discogs…</p>}
 
       {identified && (identified.artist || identified.title) && (

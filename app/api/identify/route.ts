@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { identifyRecordFromImage } from "@/lib/anthropic";
+import { identifyRecordFromImage } from "@/lib/gemini";
 
 export async function POST(req: NextRequest) {
   try {

@@ -6,3 +6,5 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 deploy/webhook.env
+.open-next/
+.wrangler/

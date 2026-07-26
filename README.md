@@ -37,6 +37,27 @@ Everything runs as a small Next.js app: a mobile-friendly web page plus a couple
 
    Open http://localhost:3000. To use the camera from your phone, deploy it (e.g. to [Netlify](https://netlify.com)) or expose your dev server over your LAN/a tunnel.
 
+## Deploying (Cloudflare Workers — recommended)
+
+Cloudflare's free tier (100,000 requests/day) scales much better for ongoing
+personal use than typical PaaS build-minute/bandwidth caps. This repo is
+already set up for it via the [OpenNext Cloudflare adapter](https://opennext.js.org/cloudflare).
+
+1. Go to https://dash.cloudflare.com → **Workers & Pages → Create → Import a Git repository**.
+2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+3. Build settings:
+   - Build command: `npm run cf:build`
+   - Deploy command: `npx wrangler deploy`
+   (Cloudflare should also auto-detect these from `wrangler.jsonc`.)
+4. Add the environment variables/secrets in the dashboard before deploying:
+   - `DISCOGS_TOKEN`
+   - `DISCOGS_USERNAME` (optional)
+   - `GEMINI_API_KEY`
+5. Deploy. Cloudflare auto-redeploys on every push to the connected branch from then on.
+
+To deploy manually from your own machine instead: `npm run cf:deploy` (requires
+`npx wrangler login` once).
+
 ## Deploying (Netlify)
 
 1. Go to https://app.netlify.com → **Add new site → Import an existing project**.
@@ -48,7 +69,7 @@ Everything runs as a small Next.js app: a mobile-friendly web page plus a couple
    - `GEMINI_API_KEY`
 5. Deploy. Netlify auto-redeploys on every push to the connected branch from then on.
 
-Any other Next.js host works too — just set the same three environment variables and don't commit `.env.local`.
+Any other Next.js host works too — just set the same three environment variables and don't commit `.env.local`. See `deploy/README.md` for self-hosting on your own Linux server instead.
 
 ## Notes
 

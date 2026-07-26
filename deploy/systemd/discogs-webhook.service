@@ -1,0 +1,15 @@
+[Unit]
+Description=Discogs Photo Collector deploy webhook listener
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/discogs-test
+EnvironmentFile=/home/deploy/discogs-test/deploy/webhook.env
+ExecStart=/usr/bin/node /home/deploy/discogs-test/deploy/webhook-listener.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

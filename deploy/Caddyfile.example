@@ -1,0 +1,12 @@
+# Copy to /etc/caddy/Caddyfile and replace your-domain.com with your real
+# domain (must already point at this server's IP). Caddy handles TLS
+# certificates automatically — no certbot needed.
+
+your-domain.com {
+    handle /webhook {
+        reverse_proxy localhost:9001
+    }
+    handle {
+        reverse_proxy localhost:3000
+    }
+}

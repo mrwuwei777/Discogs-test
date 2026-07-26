@@ -1,0 +1,15 @@
+[Unit]
+Description=Discogs Photo Collector (Next.js app)
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/discogs-test
+EnvironmentFile=/home/deploy/discogs-test/.env.local
+ExecStart=/usr/bin/npm run start -- -p 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

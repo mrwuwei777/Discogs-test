@@ -9,9 +9,19 @@ type Stage =
   | "idle"
   | "scanning-barcode"
   | "identifying"
+  | "review"
   | "searching"
   | "results"
   | "no-match";
+
+interface ReviewFields {
+  artist: string;
+  title: string;
+  label: string;
+  catalogNumber: string;
+}
+
+const EMPTY_REVIEW_FIELDS: ReviewFields = { artist: "", title: "", label: "", catalogNumber: "" };
 
 const MAX_DIMENSION = 1600;
 const JPEG_QUALITY = 0.82;
@@ -102,6 +112,7 @@ export function RecordCapture() {
   const [detailsError, setDetailsError] = useState<Record<number, string>>({});
   const [ownedMap, setOwnedMap] = useState<Record<number, number>>({});
   const [priceMap, setPriceMap] = useState<Record<number, DiscogsPriceStats | null>>({});
+  const [reviewFields, setReviewFields] = useState<ReviewFields>(EMPTY_REVIEW_FIELDS);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,6 +184,7 @@ export function RecordCapture() {
     setDetailsError({});
     setOwnedMap({});
     setPriceMap({});
+    setReviewFields(EMPTY_REVIEW_FIELDS);
 
     try {
       const rawDataUrl = await fileToDataUrl(file);
@@ -206,38 +218,42 @@ export function RecordCapture() {
         throw new Error((identifiedRecord as unknown as { error: string }).error);
       }
       setIdentified(identifiedRecord);
+      setReviewFields({
+        artist: identifiedRecord.artist ?? "",
+        title: identifiedRecord.title ?? "",
+        label: identifiedRecord.label ?? "",
+        catalogNumber: identifiedRecord.catalogNumber ?? "",
+      });
+      setStage("review");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setStage("idle");
+    }
+  }
 
-      if (!identifiedRecord.artist && !identifiedRecord.title && !identifiedRecord.catalogNumber) {
-        setStage("no-match");
-        return;
-      }
+  async function runSearch() {
+    setError(null);
+    const params = new URLSearchParams();
+    if (reviewFields.artist.trim()) params.set("artist", reviewFields.artist.trim());
+    if (reviewFields.title.trim()) params.set("release_title", reviewFields.title.trim());
+    if (reviewFields.label.trim()) params.set("label", reviewFields.label.trim());
+    if (reviewFields.catalogNumber.trim()) params.set("catno", reviewFields.catalogNumber.trim());
 
-      setStage("searching");
-      let searchResults: DiscogsSearchResult[] = [];
+    if ([...params.keys()].length === 0) {
+      setError("Enter at least one field to search with.");
+      return;
+    }
 
-      // Prioritize the catalogue number — it's the most precise identifier
-      // for a specific pressing — before falling back to artist/title.
-      if (identifiedRecord.catalogNumber) {
-        const params = new URLSearchParams({ catno: identifiedRecord.catalogNumber });
-        if (identifiedRecord.label) params.set("label", identifiedRecord.label);
-        searchResults = await fetchSearchResults(params);
-      }
-
-      if (searchResults.length === 0 && (identifiedRecord.artist || identifiedRecord.title)) {
-        const params = new URLSearchParams();
-        if (identifiedRecord.artist) params.set("artist", identifiedRecord.artist);
-        if (identifiedRecord.title) params.set("release_title", identifiedRecord.title);
-        if (identifiedRecord.label) params.set("label", identifiedRecord.label);
-        searchResults = await fetchSearchResults(params);
-      }
-
+    setStage("searching");
+    try {
+      const searchResults = await fetchSearchResults(params);
       setResults(searchResults);
       setStage(searchResults.length > 0 ? "results" : "no-match");
       checkOwnership(searchResults);
       checkPrices(searchResults);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      setStage("idle");
+      setStage("review");
     }
   }
 
@@ -272,11 +288,19 @@ export function RecordCapture() {
     setDetailsError({});
     setOwnedMap({});
     setPriceMap({});
+    setReviewFields(EMPTY_REVIEW_FIELDS);
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (galleryInputRef.current) galleryInputRef.current.value = "";
   }
 
   const busy = stage === "scanning-barcode" || stage === "identifying" || stage === "searching";
+
+  const activeSearchFields = [
+    reviewFields.artist.trim() && { label: "artist", value: reviewFields.artist.trim() },
+    reviewFields.title.trim() && { label: "release_title", value: reviewFields.title.trim() },
+    reviewFields.label.trim() && { label: "label", value: reviewFields.label.trim() },
+    reviewFields.catalogNumber.trim() && { label: "catno", value: reviewFields.catalogNumber.trim() },
+  ].filter(Boolean) as { label: string; value: string }[];
 
   return (
     <div>
@@ -332,7 +356,7 @@ export function RecordCapture() {
 
       {stage === "scanning-barcode" && <p className="status">Scanning for a barcode…</p>}
       {stage === "identifying" && <p className="status">Reading the cover with Gemini…</p>}
-      {stage === "searching" && <p className="status">Searching Discogs…</p>}
+      {stage === "searching" && !identified && <p className="status">Searching Discogs…</p>}
 
       {identified && (identified.artist || identified.title) && (
         <div className="identified-box">
@@ -344,10 +368,74 @@ export function RecordCapture() {
         </div>
       )}
 
+      {(stage === "review" || stage === "searching") && identified && (
+        <div className="review-box">
+          <h2>Review search terms</h2>
+          <p className="status">
+            Edit any field before searching. Fewer fields cast a wider net; more fields narrow it down —
+            clear a field if Discogs isn't finding a match.
+          </p>
+
+          <div className="field-group">
+            <label htmlFor="review-artist">Artist</label>
+            <input
+              id="review-artist"
+              type="text"
+              value={reviewFields.artist}
+              onChange={(e) => setReviewFields((prev) => ({ ...prev, artist: e.target.value }))}
+            />
+          </div>
+          <div className="field-group">
+            <label htmlFor="review-title">Release title</label>
+            <input
+              id="review-title"
+              type="text"
+              value={reviewFields.title}
+              onChange={(e) => setReviewFields((prev) => ({ ...prev, title: e.target.value }))}
+            />
+          </div>
+          <div className="field-group">
+            <label htmlFor="review-label">Label</label>
+            <input
+              id="review-label"
+              type="text"
+              value={reviewFields.label}
+              onChange={(e) => setReviewFields((prev) => ({ ...prev, label: e.target.value }))}
+            />
+          </div>
+          <div className="field-group">
+            <label htmlFor="review-catno">Catalogue number</label>
+            <input
+              id="review-catno"
+              type="text"
+              value={reviewFields.catalogNumber}
+              onChange={(e) => setReviewFields((prev) => ({ ...prev, catalogNumber: e.target.value }))}
+            />
+          </div>
+
+          <div className="query-preview">
+            {activeSearchFields.length > 0
+              ? `Discogs search will use: ${activeSearchFields
+                  .map((f) => `${f.label}="${f.value}"`)
+                  .join(", ")}`
+              : "No fields set — add at least one before searching."}
+          </div>
+
+          <button onClick={runSearch} disabled={stage === "searching"} style={{ width: "100%" }}>
+            {stage === "searching" ? "Searching…" : "Search Discogs"}
+          </button>
+        </div>
+      )}
+
       {error && <p className="error">{error}</p>}
 
       {stage === "no-match" && (
-        <p className="status">No matches found on Discogs. Try a clearer photo of the cover or barcode.</p>
+        <div>
+          <p className="status">No matches found on Discogs. Try adjusting the search terms below.</p>
+          <button className="secondary" onClick={() => setStage("review")} style={{ width: "100%" }}>
+            ← Edit search terms
+          </button>
+        </div>
       )}
 
       {results.map((result) => (

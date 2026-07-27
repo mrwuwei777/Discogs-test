@@ -140,8 +140,7 @@ narrative.
 
 ## Current status
 
-- **Live app:** _[paste your Cloudflare Workers URL here, e.g.
-  `https://discogs-photo-collector.<your-subdomain>.workers.dev`]_
+- **Live app:** https://discogs-test.mike-94d.workers.dev/
 - **Repository:** https://github.com/mrwuwei777/discogs-test
   (branch: `claude/discogs-photo-collection-app-is1u4y`)
 - **Setup / environment variables:** see [`README.md`](../README.md)

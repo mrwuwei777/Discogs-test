@@ -2,6 +2,8 @@
 
 Photograph a record → find it on Discogs → add it straight to your collection.
 
+**Live app:** https://discogs-test.mike-94d.workers.dev/
+
 ## How it works
 
 1. Open the app on your phone and take (or upload) a photo of a record's cover, label, or barcode.

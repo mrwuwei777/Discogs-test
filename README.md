@@ -46,7 +46,7 @@ personal use than typical PaaS build-minute/bandwidth caps. This repo is
 already set up for it via the [OpenNext Cloudflare adapter](https://opennext.js.org/cloudflare).
 
 1. Go to https://dash.cloudflare.com → **Workers & Pages → Create → Import a Git repository**.
-2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+2. Connect GitHub and pick the `Discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
 3. Build settings:
    - Build command: `npm run cf:build`
    - Deploy command: `npx wrangler deploy`
@@ -63,7 +63,7 @@ To deploy manually from your own machine instead: `npm run cf:deploy` (requires
 ## Deploying (Netlify)
 
 1. Go to https://app.netlify.com → **Add new site → Import an existing project**.
-2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+2. Connect GitHub and pick the `Discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
 3. Netlify auto-detects Next.js via `netlify.toml` (already in this repo) — no build settings to change.
 4. Before the first deploy (or right after, then redeploy), add the environment variables under **Site configuration → Environment variables**:
    - `DISCOGS_TOKEN`
@@ -72,6 +72,18 @@ To deploy manually from your own machine instead: `npm run cf:deploy` (requires
 5. Deploy. Netlify auto-redeploys on every push to the connected branch from then on.
 
 Any other Next.js host works too — just set the same three environment variables and don't commit `.env.local`. See `deploy/README.md` for self-hosting on your own Linux server instead.
+
+## Deploying (PHP shared hosting)
+
+There is a second implementation in [`php/`](php/README.md): the same app ported
+to PHP 8 and vanilla JavaScript, with no build step and no Node runtime. It
+exists because the shared hosting it targets cannot run Node at all — no binary,
+and a `noexec` home filesystem that prevents installing one.
+
+It runs at `hypemachine.co.uk/discogs/`. Copy `php/` to the web root, put the
+credentials in a config file outside it, and gate it behind the built-in HTTP
+Basic auth. See [`php/README.md`](php/README.md) for the details and for the
+ways it deliberately differs from the Next.js version.
 
 ## Notes
 

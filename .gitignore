@@ -8,3 +8,5 @@ node_modules/
 deploy/webhook.env
 .open-next/
 .wrangler/
+php/config.php
+discogs-config.php

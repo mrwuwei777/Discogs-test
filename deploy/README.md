@@ -34,8 +34,8 @@ sudo apt-get update && sudo apt-get install -y caddy
 ```bash
 sudo adduser --disabled-password --gecos "" deploy
 sudo su - deploy
-git clone https://github.com/mrwuwei777/discogs-test.git
-cd discogs-test
+git clone https://github.com/mrwuwei777/Discogs-test.git
+cd Discogs-test
 git checkout claude/discogs-photo-collection-app-is1u4y
 npm ci
 npm run build
@@ -66,8 +66,8 @@ sudo chmod 0440 /etc/sudoers.d/discogs-deploy
 ## 5. Install the systemd services
 
 ```bash
-sudo cp /home/deploy/discogs-test/deploy/systemd/discogs-app.service /etc/systemd/system/
-sudo cp /home/deploy/discogs-test/deploy/systemd/discogs-webhook.service /etc/systemd/system/
+sudo cp /home/deploy/Discogs-test/deploy/systemd/discogs-app.service /etc/systemd/system/
+sudo cp /home/deploy/Discogs-test/deploy/systemd/discogs-webhook.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now discogs-app.service
 sudo systemctl enable --now discogs-webhook.service
@@ -88,7 +88,7 @@ If you have a domain, edit `deploy/Caddyfile.example`, replace
 `your-domain.com`, then:
 
 ```bash
-sudo cp /home/deploy/discogs-test/deploy/Caddyfile.example /etc/caddy/Caddyfile
+sudo cp /home/deploy/Discogs-test/deploy/Caddyfile.example /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
@@ -122,7 +122,7 @@ sudo journalctl -u discogs-app.service -f
 Run a deploy by hand at any time:
 
 ```bash
-/home/deploy/discogs-test/deploy/deploy.sh
+/home/deploy/Discogs-test/deploy/deploy.sh
 ```
 
 Restart just the app without redeploying:

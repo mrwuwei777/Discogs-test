@@ -73,6 +73,18 @@ To deploy manually from your own machine instead: `npm run cf:deploy` (requires
 
 Any other Next.js host works too — just set the same three environment variables and don't commit `.env.local`. See `deploy/README.md` for self-hosting on your own Linux server instead.
 
+## Deploying (PHP shared hosting)
+
+There is a second implementation in [`php/`](php/README.md): the same app ported
+to PHP 8 and vanilla JavaScript, with no build step and no Node runtime. It
+exists because the shared hosting it targets cannot run Node at all — no binary,
+and a `noexec` home filesystem that prevents installing one.
+
+It runs at `hypemachine.co.uk/discogs/`. Copy `php/` to the web root, put the
+credentials in a config file outside it, and gate it behind the built-in HTTP
+Basic auth. See [`php/README.md`](php/README.md) for the details and for the
+ways it deliberately differs from the Next.js version.
+
 ## Notes
 
 - New releases are added to your default "Uncategorized" collection folder (folder ID `1`). You can move them into other folders from Discogs itself.

@@ -28,6 +28,7 @@ the match → it's added to the Discogs collection in one tap.
 | Image identification | Google Gemini API (`@google/genai`) | Reads artist/title/label/catalogue number/barcode off a photo when no barcode is scannable. **Originally built on Anthropic Claude** (`claude-sonnet-5`); switched to Gemini's free tier — see [Decision log](#decision-log) |
 | Record data | Discogs API (`lib/discogs.ts`) | Database search, release details, collection read/write, marketplace price suggestions |
 | Hosting | Cloudflare Workers via `@opennextjs/cloudflare` | Chosen after Vercel and Netlify — see [Decision log](#decision-log) |
+| Second implementation | PHP 8.0 + vanilla JS (`php/`) | A dependency-free port for shared hosting with no Node runtime — see [Decision log](#decision-log) |
 | Deploy tooling kept in repo | `netlify.toml`, `deploy/` (systemd + webhook kit for self-hosting a VPS) | Not actively used, but left in place as working fallback options |
 
 ## Architecture
@@ -96,16 +97,79 @@ narrative.
   actual long-term usage but made the free tier impractical to keep
   developing against.
 - **Self-hosting on a personal VPS was considered and ruled out** — no VPS
-  is available; the available shared hosting (StackCP/20i) has no
-  confirmed persistent Node.js process support, only SSH for file/git
-  operations. A full systemd + webhook-based self-deploy kit was written
+  is available. A full systemd + webhook-based self-deploy kit was written
   regardless (`deploy/`) in case suitable hosting becomes available later.
+  The available shared hosting (StackCP/20i) was recorded here as having "no
+  confirmed persistent Node.js process support"; that has since been tested
+  directly and is now a settled negative rather than an open question — see
+  [Running Node.js on the shared host](#running-nodejs-on-the-shared-host-a-settled-negative).
 - **Cloudflare Workers (via the OpenNext adapter)** is the current host.
   Chosen for its far more generous free tier (100,000 requests/day vs.
   Netlify's tight build-minute budget) — a better fit for a personal tool
   that should keep working indefinitely without recurring cost or
   migration churn. Verified the built worker is ~1.2 MiB gzipped, well
   under Cloudflare's 3 MiB free-tier size limit.
+
+### Running Node.js on the shared host: a settled negative
+
+The 20i/StackCP hosting behind hypemachine.co.uk **cannot run Node.js**, and no
+amount of configuration will change that. Tested directly rather than assumed:
+
+- No `node` or `npm` binary on the SSH node (`ssh-node-gb.lhr.stackcp.net`), nor
+  on the web node (`web185.lhr.stackcp.net`) — the two are separate machines,
+  and the web node was probed via PHP `shell_exec` because nothing listens on
+  localhost from the SSH box.
+- `/home/sites/34a` is an NFS mount carrying `noexec`. Copying `/bin/echo` into
+  `$HOME`, marking it executable and running it yields `Permission denied`, so
+  a self-installed Node build cannot execute either.
+
+That closes off the `deploy/` kit for this host specifically: it assumes a VPS
+with systemd and a Node runtime, neither of which exists here. It remains valid
+for an actual VPS.
+
+What the host does provide: Apache with PHP 8.0.30 (fpm-fcgi), `curl` 8.1.2,
+`gd`, `imagick`, `sqlite3`, a 128 MB POST limit, a 300s execution ceiling, and
+unrestricted outbound HTTPS (verified against both `api.discogs.com` and
+`generativelanguage.googleapis.com`).
+
+### Second implementation: a PHP port (`php/`)
+
+Since every server-side operation in this app is an authenticated HTTP call —
+Gemini for identification, Discogs for search, detail, ownership and collection
+writes — none of it depends on Node beyond the framework it was written in. The
+app was therefore ported to PHP 8.0 plus vanilla JavaScript, with no build step,
+and now runs at `hypemachine.co.uk/discogs/` alongside the Workers deployment.
+
+The stylesheet is shared verbatim and the identification prompt, response schema
+and Discogs query construction are kept faithful, so behaviour matches. Three
+things necessarily differ:
+
+- **Concurrency.** `Promise.all` has no PHP equivalent, so batch ownership and
+  price lookups use `curl_multi` in windows of five — fast enough (eight
+  releases in ~0.9s) while staying inside Discogs' 60 requests/minute.
+- **Caching.** Release details and price suggestions are cached to disk, which
+  the edge deployment did not need. Ownership is deliberately never cached.
+- **Authentication.** The Workers URL was obscure; a path on a public domain is
+  not. The port is gated behind HTTP Basic auth, enforced in PHP so it does not
+  depend on the host's `AllowOverride` settings.
+
+The two implementations share no code. A change to the identification prompt or
+the Discogs query logic has to be made in both.
+
+### Estimated value has never actually worked
+
+Testing the port against a live account showed `/marketplace/price_suggestions/`
+returning `404 {"message":"You must fill out your seller settings first."}` for
+every release. This is an account precondition, not a bug, and it applies
+equally to the Cloudflare deployment — the feature has never produced a figure
+on either.
+
+It went unnoticed because both implementations treat pricing as non-critical
+enrichment and swallow the error, so the UI silently omits the value rather than
+reporting anything. Resolving it means filling in Discogs seller settings; no
+code change is required. (The port additionally avoids caching the failed
+lookups, so values appear as soon as the account is configured rather than up to
+a day later.)
 
 ### Product/UX iterations, roughly in order
 
@@ -140,11 +204,15 @@ narrative.
 
 ## Current status
 
-- **Live app:** https://discogs-test.mike-94d.workers.dev/
+- **Live app (Next.js on Cloudflare Workers):** https://discogs-test.mike-94d.workers.dev/
+- **Live app (PHP port, self-hosted):** https://hypemachine.co.uk/discogs/ —
+  behind HTTP Basic auth
 - **Repository:** https://github.com/mrwuwei777/discogs-test
   (branch: `claude/discogs-photo-collection-app-is1u4y`)
 - **Setup / environment variables:** see [`README.md`](../README.md)
-- **Self-hosting an own server instead:** see [`deploy/README.md`](../deploy/README.md)
+- **The PHP port:** see [`php/README.md`](../php/README.md)
+- **Self-hosting on a VPS instead:** see [`deploy/README.md`](../deploy/README.md)
+  — note this kit needs a real VPS; it cannot work on the 20i shared host
 
 ## Possible future work
 
@@ -153,5 +221,7 @@ narrative.
 - Editable/removable duplicate-add protection beyond the existing
   "already in your collection" badge.
 - Batch mode for photographing several records in one session.
-- Revisit self-hosting if VPS or Node-capable hosting becomes available —
-  the `deploy/` kit is ready to use as-is.
+- Fill in Discogs seller settings so the estimated-value feature starts
+  returning figures on both deployments.
+- Keep the two implementations in step, or retire one. They currently share a
+  stylesheet but no logic, so behavioural changes must be made twice.

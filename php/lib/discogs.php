@@ -13,7 +13,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 const DISCOGS_API = 'https://api.discogs.com';
-const DISCOGS_USER_AGENT = 'DiscogsPhotoCollector/0.1 (+https://github.com/mrwuwei777/discogs-test)';
+const DISCOGS_USER_AGENT = 'DiscogsPhotoCollector/0.1 (+https://github.com/mrwuwei777/Discogs-test)';
 
 /** Discogs permits 60 authenticated requests/minute; stay comfortably under. */
 const DISCOGS_MAX_CONCURRENCY = 5;

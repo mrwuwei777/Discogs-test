@@ -46,7 +46,7 @@ personal use than typical PaaS build-minute/bandwidth caps. This repo is
 already set up for it via the [OpenNext Cloudflare adapter](https://opennext.js.org/cloudflare).
 
 1. Go to https://dash.cloudflare.com → **Workers & Pages → Create → Import a Git repository**.
-2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+2. Connect GitHub and pick the `Discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
 3. Build settings:
    - Build command: `npm run cf:build`
    - Deploy command: `npx wrangler deploy`
@@ -63,7 +63,7 @@ To deploy manually from your own machine instead: `npm run cf:deploy` (requires
 ## Deploying (Netlify)
 
 1. Go to https://app.netlify.com → **Add new site → Import an existing project**.
-2. Connect GitHub and pick the `discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
+2. Connect GitHub and pick the `Discogs-test` repo, branch `claude/discogs-photo-collection-app-is1u4y`.
 3. Netlify auto-detects Next.js via `netlify.toml` (already in this repo) — no build settings to change.
 4. Before the first deploy (or right after, then redeploy), add the environment variables under **Site configuration → Environment variables**:
    - `DISCOGS_TOKEN`

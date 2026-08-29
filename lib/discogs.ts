@@ -1,5 +1,5 @@
 const DISCOGS_API = "https://api.discogs.com";
-const USER_AGENT = "DiscogsPhotoCollector/0.1 (+https://github.com/mrwuwei777/discogs-test)";
+const USER_AGENT = "DiscogsPhotoCollector/0.1 (+https://github.com/mrwuwei777/Discogs-test)";
 
 function getToken(): string {
   const token = process.env.DISCOGS_TOKEN;

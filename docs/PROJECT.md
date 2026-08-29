@@ -207,7 +207,7 @@ a day later.)
 - **Live app (Next.js on Cloudflare Workers):** https://discogs-test.mike-94d.workers.dev/
 - **Live app (PHP port, self-hosted):** https://hypemachine.co.uk/discogs/ —
   behind HTTP Basic auth
-- **Repository:** https://github.com/mrwuwei777/discogs-test
+- **Repository:** https://github.com/mrwuwei777/Discogs-test
   (branch: `claude/discogs-photo-collection-app-is1u4y`)
 - **Setup / environment variables:** see [`README.md`](../README.md)
 - **The PHP port:** see [`php/README.md`](../php/README.md)
